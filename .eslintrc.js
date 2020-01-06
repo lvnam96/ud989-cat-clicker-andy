@@ -21,6 +21,7 @@ module.exports = {
     'no-var': 'warn',
     'max-len': 'warn',
     'no-underscore-dangle': 'off',
+    'linebreak-style': 'off',
     'max-classes-per-file': 'off'
   },
 };
