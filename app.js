@@ -10,6 +10,7 @@ class Model {
     this.getCats = this.getCats.bind(this);
     this.getSelectedCat = this.getSelectedCat.bind(this);
     this.increaseClickCounter = this.increaseClickCounter.bind(this);
+    this.update = this.update.bind(this);
   }
 
   get selectedCatIndex() {
@@ -30,16 +31,18 @@ class Model {
 
   increaseClickCounter(catIdx = this._selectedCatIndex) {
     const cat = this._cats[catIdx];
-    this._update({
-      ...cat,
+    this.update({
       clickCounter: cat.clickCounter + 1,
     }, catIdx);
   }
 
-  _update(cat, idx) {
+  update(cat, idx) {
     if (!cat || typeof idx !== 'number') throw new Error('Arguments must be provided!');
     this.copyCats = [...this._cats];
-    this.copyCats[idx] = cat;
+    this.copyCats[idx] = {
+      ...this.copyCats[idx],
+      ...cat,
+    };
     this._cats = this.copyCats;
   }
 }
@@ -124,7 +127,7 @@ class CatListView {
 
 class CatImgView {
   constructor() {
-    this.cat = null;
+    this._cat = null;
     this.clickCounterText = null;
     this.catImg = null;
     this.handleClickImg = null;
@@ -140,6 +143,7 @@ class CatImgView {
 
   init(cat, increaseClickCounterCallback) {
     if (!cat) throw new Error('"cat" argument must be provided!');
+    if (typeof increaseClickCounterCallback !== 'function') throw new Error('"increaseClickCounterCallback" argument must be provided!');
 
     this.handleClickImg = () => {
       increaseClickCounterCallback();
@@ -151,19 +155,19 @@ class CatImgView {
   }
 
   setCat(cat) {
-    this.cat = cat;
+    this._cat = cat;
   }
 
   render() {
     // dont need to clean old event listener (even though this method will be called many times)
     // this.catImg.removeEventListener('click', this.handleClickImg);
 
-    this.catImg.src = this.cat.url;
+    this.catImg.src = this._cat.url;
     this.renderClickCounterText();
   }
 
   renderClickCounterText() {
-    this.clickCounterText.textContent = `${this.cat.clickCounter} click(s)`;
+    this.clickCounterText.textContent = `${this._cat.clickCounter} click(s)`;
   }
 
   mount() {
@@ -193,18 +197,23 @@ class CatImgView {
 
 doc.addEventListener('DOMContentLoaded', () => {
   const model = new Model([{
+    name: 'Cat 1',
     url: './cat_picture1.jpg',
     clickCounter: 0,
   }, {
+    name: 'Cat 2',
     url: './cat_picture2.jpeg',
     clickCounter: 0,
   }, {
+    name: 'Cat 3',
     url: './cat_picture3.jpeg',
     clickCounter: 0,
   }, {
+    name: 'Cat 4',
     url: './cat_picture4.jpeg',
     clickCounter: 0,
   }, {
+    name: 'Cat 5',
     url: './cat_picture5.jpeg',
     clickCounter: 0,
   }]);
