@@ -1,0 +1,24 @@
+{
+  "name": "nanodegree-js-design-patterns-cat-clicker-andy",
+  "version": "1.0.0",
+  "description": "cat-clicker\r ===========",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/udacity/ud989-cat-clicker-andy.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/udacity/ud989-cat-clicker-andy/issues"
+  },
+  "homepage": "https://github.com/udacity/ud989-cat-clicker-andy#readme",
+  "devDependencies": {
+    "eslint": "^6.8.0",
+    "eslint-config-airbnb-base": "^14.0.0",
+    "eslint-plugin-import": "^2.19.1"
+  }
+}
