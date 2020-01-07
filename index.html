@@ -15,10 +15,44 @@
       integrity="sha256-US46s8iE//XjSFdoo70XyCnsGALF7ggrHbPCHqvoRn4="
       crossorigin="anonymous"
     />
+    <style>
+      img {
+        max-width: 100%;
+      }
+    </style>
   </head>
   <body>
-    <div id="catlist"></div>
-    <div id="cat-img-ctnr"></div>
+    <div class="container">
+      <div class="row">
+        <div class="col-12 col-md-6 mb-5 mb-md-0">
+          <div id="catlist"></div>
+          <div id="cat-img-ctnr"></div>
+        </div>
+        <div class="col-12 col-md-6">
+          <p class="text-center"><button class="btn btn-danger adm-btn">Admin</button></p>
+          <div class="mx-auto cat-form-ctnr" style="max-width: 500px;">
+            <form class="cat-form" action="#">
+              <div class="form-group">
+                <label for="cat-name-input">Cat name</label>
+                <input type="text" class="form-control" id="cat-name-input" />
+              </div>
+              <div class="form-group">
+                <label for="cat-img-url-input">Cat image URL</label>
+                <input type="url" class="form-control" id="cat-img-url-input" />
+              </div>
+              <div class="form-group">
+                <label for="cat-click-input">Numbers of click</label>
+                <input type="number" class="form-control" id="cat-click-input" />
+              </div>
+              <p class="text-right">
+                <button class="btn btn-outline-secondary cancel-btn" type="button">Cancel</button>
+                <button class="btn btn-primary save-btn" type="button">Save</button>
+              </p>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
     <script
       src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
       integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n"
@@ -50,6 +84,6 @@
       integrity="sha256-50SUpM8uWrEsGOfSXDxZ+KqiIeOxUlwhiQN316wmwOg="
       crossorigin="anonymous"
     ></script>
-    <script src="app.test.js" id="tests-script"></script>
+    <!-- <script src="app.test.js" id="tests-script"></script> -->
   </body>
 </html>

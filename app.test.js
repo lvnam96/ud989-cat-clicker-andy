@@ -1,5 +1,6 @@
-/* global Model, CatListView, CatImgView, Octopus */
+/* global Model, CatListView, CatImgView, CatFormView, Octopus */
 
+const win = window;
 window.document.addEventListener('DOMContentLoaded', () => {
   const doc = window.document;
   const data = [{
@@ -78,6 +79,8 @@ window.document.addEventListener('DOMContentLoaded', () => {
     const admBtn = doc.querySelector('button.adm-btn');
     const saveBtn = doc.querySelector('button.save-btn');
     const cancelBtn = doc.querySelector('button.cancel-btn');
+    const catFormCtnr = doc.querySelector('.cat-form-ctnr');
+    const catForm = doc.querySelector('form.cat-form');
     const catNameInput = doc.querySelector('#cat-name-input');
     const catUrlInput = doc.querySelector('#cat-img-url-input');
     const catClickInput = doc.querySelector('#cat-click-input');
@@ -88,13 +91,16 @@ window.document.addEventListener('DOMContentLoaded', () => {
         view = {
           catListView: new CatListView(),
           catImgView: new CatImgView(),
-          init(cats = []) {
-            this.catListView.init(cats, octopus.changeCatImg);
-            this.catImgView.init(octopus.getSelectedCat(), octopus.increaseClickCounter);
+          catFormView: new CatFormView(),
+          init(cats = [], changeCatImg, getSelectedCat, increaseClickCounter, handleUpdateCat) {
+            this.catListView.init(cats, changeCatImg);
+            this.catImgView.init(getSelectedCat(), increaseClickCounter);
+            this.catFormView.init(handleUpdateCat, getSelectedCat);
           },
           unmount() {
             this.catListView.unmount();
             this.catImgView.unmount();
+            this.catFormView.reset();
           },
         };
         octopus = new Octopus(model, view);
@@ -105,10 +111,18 @@ window.document.addEventListener('DOMContentLoaded', () => {
         octopus.unmount();
       });
 
+      describe('Cat List', () => {
+        it('should change cat\'s image, name & click counter when click on a button', () => {
+          doc.querySelector('#cat2').click();
+          expect(doc.querySelector('p.click-counter-text').textContent).toContain(data[1].clickCounter);
+          expect(doc.querySelector('img.cat-img').getAttribute('src')).toContain(data[1].url);
+        });
+      });
+
       describe('Cat Img', () => {
         it('should have only one cat image', () => {
           expect(doc.querySelectorAll('img.cat-img').length).toBe(1);
-          expect(doc.querySelector('img.cat-img').src).toBeDefined();
+          expect(doc.querySelector('img.cat-img').getAttribute('src')).toBeDefined();
         });
 
         it('should have only one click counter text', () => {
@@ -123,6 +137,67 @@ window.document.addEventListener('DOMContentLoaded', () => {
           catImg.click();
           catImg.click();
           expect(clickCounterText.textContent).toBe('2 click(s)');
+        });
+      });
+
+      xdescribe('Cat Form', () => {
+        it('should hide cat form by default', () => {
+          expect(catFormCtnr.classList.contains('d-none')).toBe(true);
+        });
+
+        it('should toggle displaying cat form when click on Admin button', () => {
+          admBtn.click();
+          expect(catFormCtnr.classList.contains('d-none')).toBe(false);
+          admBtn.click();
+          expect(catFormCtnr.classList.contains('d-none')).toBe(true);
+        });
+
+        it('should populate cat form\'s inputs when show cat form', () => {
+          const firstCat = data[0];
+
+          admBtn.click();
+          expect({
+            name: catNameInput.value,
+            url: catUrlInput.value,
+            clickCounter: parseInt(catClickInput.value, 10),
+          }).toEqual(firstCat);
+        });
+
+        it('should clear cat form\'s inputs when hide cat form', () => {
+          const firstCat = data[0];
+
+          admBtn.click();
+          expect({
+            name: catNameInput.value,
+            url: catUrlInput.value,
+            clickCounter: parseInt(catClickInput.value, 10),
+          }).toEqual(firstCat);
+        });
+
+        it('should edit selected cat when click on Save button', () => {
+          const catImg = doc.querySelector('img.cat-img');
+          const newCat = {
+            name: 'New cat name',
+            clickCounter: 3,
+            url: 'https://placehold.it/400x300',
+          };
+          admBtn.click();
+          catNameInput.value = newCat.name;
+          catUrlInput.value = newCat.url;
+          catClickInput.value = newCat.clickCounter;
+          saveBtn.click();
+
+          // BUG: by somehow the view stores wrong ref to these below elements, (even though the view should be unmount() &  re-init() after each spec), so the view modifies wrong elements & the selected elements here are not those modified ones
+          expect(doc.querySelector('p.click-counter-text').textContent).toBe('3 click(s)');
+          expect(catImg.getAttribute('src')).toBe(newCat.url);
+        });
+
+        it('should hide form when click on Save button', () => {
+          expect(catFormCtnr.classList.contains('d-none')).toBe(true);
+          admBtn.click();
+          expect(catForm.classList.contains('d-none')).toBe(false);
+          saveBtn.click();
+          expect(catFormCtnr.classList.contains('d-none')).toBe(true);
         });
       });
     });
@@ -177,6 +252,35 @@ window.document.addEventListener('DOMContentLoaded', () => {
         catImgView.unmount();
       });
     });
+
+    describe('View:CatFormView', () => {
+      let catFormView;
+      beforeEach(() => {
+        catFormView = new CatFormView();
+      });
+
+      afterEach(() => {
+        catFormView.reset();
+      });
+
+      it('should be able to select DOMs', () => {
+        expect(catFormView.admBtn).toBeInstanceOf(win.HTMLElement);
+        expect(catFormView.saveBtn).toBeInstanceOf(win.HTMLElement);
+        expect(catFormView.cancelBtn).toBeInstanceOf(win.HTMLElement);
+        expect(catFormView.catFormCtnr).toBeInstanceOf(win.HTMLElement);
+        expect(catFormView.catForm).toBeInstanceOf(win.HTMLElement);
+        expect(catFormView.catNameInput).toBeInstanceOf(win.HTMLElement);
+        expect(catFormView.catUrlInput).toBeInstanceOf(win.HTMLElement);
+        expect(catFormView.catClickInput).toBeInstanceOf(win.HTMLElement);
+      });
+
+      it('should be able to store cat form show/hide status', () => {
+        catFormView.hideCatForm();
+        expect(catFormView.isHideCatForm).toBe(true);
+        catFormView.showCatForm(data[0]);
+        expect(catFormView.isHideCatForm).toBe(false);
+      });
+    });
   });
 
   describe('App:Controller', () => {
@@ -189,13 +293,16 @@ window.document.addEventListener('DOMContentLoaded', () => {
       view = {
         catListView: new CatListView(),
         catImgView: new CatImgView(),
-        init(cats = []) {
-          this.catListView.init(cats, octopus.changeCatImg);
-          this.catImgView.init(octopus.getSelectedCat(), octopus.increaseClickCounter);
+        catFormView: new CatFormView(),
+        init(cats = [], changeCatImg, getSelectedCat, increaseClickCounter, handleUpdateCat) {
+          this.catListView.init(cats, changeCatImg);
+          this.catImgView.init(getSelectedCat(), increaseClickCounter);
+          this.catFormView.init(handleUpdateCat, getSelectedCat);
         },
         unmount() {
           this.catListView.unmount();
           this.catImgView.unmount();
+          this.catFormView.reset();
         },
       };
       octopus = new Octopus(model, view);

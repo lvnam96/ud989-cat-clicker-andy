@@ -1,6 +1,5 @@
 
-const win = window;
-const doc = win.document;
+const doc = window.document;
 
 class Model {
   constructor(cats = [{ clickCounter: 0, url: '' }]) {
@@ -58,6 +57,7 @@ class Octopus {
     this.getCats = this.model.getCats.bind(this.model);
     this.getSelectedCat = this.model.getSelectedCat.bind(this.model);
     this.increaseClickCounter = this.increaseClickCounter.bind(this);
+    this.handleUpdateCat = this.handleUpdateCat.bind(this);
   }
 
   unmount() {
@@ -65,14 +65,14 @@ class Octopus {
   }
 
   init() {
-    this.view.init(this.getCats());
+    this.view.init(this.getCats(), this.changeCatImg, this.getSelectedCat, this.increaseClickCounter, this.handleUpdateCat);
     return this;
   }
 
   changeCatImg(selectedCatIndex) {
     this.model.selectedCatIndex = selectedCatIndex;// update data in "model"
     this.view.catImgView.setCat(this.getSelectedCat());// pass updated data into "view"
-    this.view.catImgView.render(this.increaseClickCounter);// render the needed part in "view"
+    this.view.catImgView.render();// render the needed part in "view"
   }
 
   increaseClickCounter() {
@@ -83,6 +83,17 @@ class Octopus {
 
   getSelectedCatIndex() {
     return this.model.selectedCatIndex;
+  }
+
+  handleUpdateCat(name = '', url = '', clickCounter = 0, cb) {
+    this.model.update({
+      name,
+      url,
+      clickCounter,
+    }, this.getSelectedCatIndex());
+    this.view.catImgView.setCat(this.getSelectedCat());// pass updated data into "view"
+    this.view.catImgView.render();// render the needed part in "view"
+    if (typeof cb === 'function') cb();
   }
 }
 
@@ -101,7 +112,7 @@ class CatListView {
 
   mount(cats = [], changeImgViewCallback) {
     if (typeof changeImgViewCallback !== 'function') throw new Error('"changeImgViewCallback" must be provided');
-    const fragment = new win.DocumentFragment();
+    const fragment = new window.DocumentFragment();
     cats.forEach((cat = {}, i) => {
       const btn = doc.createElement('button');
       btn.classList.add('btn', 'btn-outline-primary');
@@ -149,6 +160,7 @@ class CatImgView {
       increaseClickCounterCallback();
       this.renderClickCounterText();
     };
+    this.catImgCtnr = doc.querySelector('#cat-img-ctnr');
     this.mount();
     this.setCat(cat);
     this.render();
@@ -162,7 +174,7 @@ class CatImgView {
     // dont need to clean old event listener (even though this method will be called many times)
     // this.catImg.removeEventListener('click', this.handleClickImg);
 
-    this.catImg.src = this._cat.url;
+    this.catImg.setAttribute('src', this._cat.url);
     this.renderClickCounterText();
   }
 
@@ -183,15 +195,109 @@ class CatImgView {
 
   unmount() {
     const { catImgCtnr } = this;
-    this.catImg.removeEventListener('click', this.handleClickImg);
-    while (catImgCtnr.firstChild) {
+    if (this.catImg) this.catImg.removeEventListener('click', this.handleClickImg);
+    while (catImgCtnr && catImgCtnr.firstChild) {
       catImgCtnr.removeChild(catImgCtnr.firstChild);
     }
 
-    delete this.catImg;
-    delete this.clickCounterText;
-    delete this.catImgCtnr;
-    delete this.handleClickImg;
+    // delete this.catImg;
+    // delete this.clickCounterText;
+    // delete this.catImgCtnr;
+    // delete this.handleClickImg;
+  }
+}
+
+class CatFormView {
+  constructor() {
+    this.cat = null;
+    this.admBtn = doc.querySelector('button.adm-btn');
+    this.saveBtn = doc.querySelector('button.save-btn');
+    this.cancelBtn = doc.querySelector('button.cancel-btn');
+    this.catFormCtnr = doc.querySelector('.cat-form-ctnr');
+    this.catForm = doc.querySelector('.cat-form');
+    this.catNameInput = doc.querySelector('#cat-name-input');
+    this.catUrlInput = doc.querySelector('#cat-img-url-input');
+    this.catClickInput = doc.querySelector('#cat-click-input');
+    this.isHideCatForm = this.catFormCtnr.classList.contains('d-none');
+
+    // this.toggleCatForm = this.toggleCatForm.bind(this);
+    this.hideCatForm = this.hideCatForm.bind(this);
+    this.showCatForm = this.showCatForm.bind(this);
+    this.render = this.render.bind(this);
+    this.init = this.init.bind(this);
+    this.reset = this.reset.bind(this);
+    this.handleClickAdmBtn = (getSelectedCat) => (e) => {
+      if (this.isHideCatForm) this.showCatForm(getSelectedCat());
+      else this.hideCatForm();
+    };
+    this.handleClickCancelBtn = (e) => {
+      this.hideCatForm();
+    };
+    this.handleClickSaveBtn = (handleUpdateCat) => (e) => {
+      e.preventDefault();
+      handleUpdateCat(this.catNameInput.value, this.catUrlInput.value, parseInt(this.catClickInput.value, 10) || 0);
+      this.hideCatForm();
+    };
+    this.handleSubmitForm = (e) => {
+      e.preventDefault();
+    };
+    this.reset = this.reset.bind(this);
+  }
+
+  init(handleUpdateCat, getSelectedCat) {
+    this.admBtn.addEventListener('click', this.handleClickAdmBtn(getSelectedCat));
+    this.cancelBtn.addEventListener('click', this.handleClickAdmBtn);
+    this.saveBtn.addEventListener('click', this.handleClickSaveBtn(handleUpdateCat));
+    this.catForm.addEventListener('submit', this.handleSubmitForm);
+    this.hideCatForm();
+  }
+
+  // toggleCatForm() {
+  //   if (this.isHideCatForm) this.hideCatForm();
+  //   else this.showCatForm();
+  // }
+
+  hideCatForm() {
+    delete this.cat;
+    this.isHideCatForm = true;
+    this.render();
+  }
+
+  showCatForm(cat) {
+    if (!cat) throw new Error('"cat" argument must be provided!');
+    this.cat = cat;
+    this.isHideCatForm = false;
+    this.render();
+  }
+
+  _populateInputs() {
+    this.catNameInput.value = this.cat.name;
+    this.catUrlInput.value = this.cat.url;
+    this.catClickInput.value = this.cat.clickCounter;
+  }
+
+  _clearInputs() {
+    this.catNameInput.value = '';
+    this.catUrlInput.value = '';
+    this.catClickInput.value = '';
+  }
+
+  render() {
+    if (this.isHideCatForm) {
+      this._clearInputs();
+      this.catFormCtnr.classList.add('d-none');
+    } else {
+      this.catFormCtnr.classList.remove('d-none');
+      this._populateInputs();
+    }
+  }
+
+  reset() {
+    this.admBtn.removeEventListener('click', this.handleClickAdmBtn);
+    this.cancelBtn.removeEventListener('click', this.handleClickAdmBtn);
+    this.saveBtn.removeEventListener('click', this.handleClickSaveBtn);
+    this.catForm.removeEventListener('submit', this.handleSubmitForm);
+    this.hideCatForm();
   }
 }
 
@@ -218,20 +324,22 @@ doc.addEventListener('DOMContentLoaded', () => {
     clickCounter: 0,
   }]);
 
-  let octopus;
   const view = {
     catListView: new CatListView(),
     catImgView: new CatImgView(),
-    init(cats = []) {
-      this.catListView.init(cats, octopus.changeCatImg);
-      this.catImgView.init(octopus.getSelectedCat(), octopus.increaseClickCounter);
+    catFormView: new CatFormView(),
+    init(cats = [], changeCatImg, getSelectedCat, increaseClickCounter, handleUpdateCat) {
+      this.catListView.init(cats, changeCatImg);
+      this.catImgView.init(getSelectedCat(), increaseClickCounter);
+      this.catFormView.init(handleUpdateCat, getSelectedCat);
     },
     unmount() {
       this.catListView.unmount();
       this.catImgView.unmount();
+      this.catFormView.reset();
     },
   };
 
-  octopus = new Octopus(model, view);
+  const octopus = new Octopus(model, view);
   if (!(doc.getElementById('tests-script'))) octopus.init();
 });
